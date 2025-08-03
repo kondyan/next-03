@@ -2,22 +2,26 @@
 
 import { uploadImage } from "@/lib/cloudinary";
 import { storePost, updatePostLikeStatus } from "@/lib/posts";
-import { redirect } from "next/dist/server/api-utils";
+import { revalidatePath } from "next/cache";
+import { redirect } from "next/navigation";
 
-export async function createPost(formData: FormData) {
-  const title = formData.get("title");
-  const image = formData.get("image");
-  const content = formData.get("content");
+export async function createPost(
+  prevState: { errors?: string[] | undefined } | null,
+  formData: FormData
+) {
+  const title = formData.get("title")?.toString() ?? "";
+  const image = (formData.get("image") as File) ?? "";
+  const content = formData.get("content")?.toString() ?? "";
 
   console.log(title, image, content);
 
-  let errors = [];
+  const errors = [];
 
   if (!title) {
     errors.push("Title is required");
   } else if (!content) {
     errors.push("Content is required.");
-  } else if (!image || image.size === 0) {
+  } else if (!image || !(image instanceof File) || image.size === 0) {
     errors.push("Image is required.");
   }
 
@@ -28,6 +32,7 @@ export async function createPost(formData: FormData) {
   try {
     imageUrl = await uploadImage(image);
   } catch (error) {
+    console.log(error);
     throw new Error(
       "Image upload failed, post was not created. Please try again later."
     );
@@ -40,9 +45,11 @@ export async function createPost(formData: FormData) {
     userId: 1,
   });
 
+  revalidatePath("/", "layout");
   redirect("/feed");
 }
 
-export async function togglePostLikeStatus(postId) {
+export async function togglePostLikeStatus(postId: number) {
   updatePostLikeStatus(postId, 2);
+  revalidatePath("/", "layout");
 }

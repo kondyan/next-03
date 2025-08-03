@@ -1,4 +1,4 @@
-export default function LikeButton({ action }) {
+export default function LikeButton({ action }: { action?: string }) {
   return (
     <button formAction={action} className="like-button">
       <svg

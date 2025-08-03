@@ -1,1 +1,1 @@
-export function POST(request) {}
+export function POST() {}
